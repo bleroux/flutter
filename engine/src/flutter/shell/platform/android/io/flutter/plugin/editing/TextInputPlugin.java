@@ -349,6 +349,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
     outAttrs.imeOptions |= enterAction;
 
+    if (configuration.hintLocales != null) {
+
+    }
+
     if (configuration.contentCommitMimeTypes != null) {
       String[] imgTypeString = configuration.contentCommitMimeTypes;
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
