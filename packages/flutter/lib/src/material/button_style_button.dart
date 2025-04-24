@@ -419,7 +419,19 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
     final EdgeInsetsGeometry? resolvedPadding = resolve<EdgeInsetsGeometry?>(
       (ButtonStyle? style) => style?.padding,
     );
-    final Size? resolvedMinimumSize = resolve<Size?>((ButtonStyle? style) => style?.minimumSize);
+
+    final VisualDensity? resolvedVisualDensity = effectiveValue(
+      (ButtonStyle? style) => style?.visualDensity,
+    );
+    final Offset densityAdjustment = resolvedVisualDensity!.baseSizeAdjustment;
+
+    final MaterialStateProperty<Size?>? customMinimumSize =
+        widgetStyle?.minimumSize ?? themeStyle?.minimumSize;
+    final Size? resolvedMinimumSize =
+        (customMinimumSize != null)
+            ? customMinimumSize.resolve(statesController.value)
+            : (defaultStyle.minimumSize!.resolve(statesController.value)! + densityAdjustment);
+
     final Size? resolvedFixedSize = resolve<Size?>((ButtonStyle? style) => style?.fixedSize);
     final Size? resolvedMaximumSize = resolve<Size?>((ButtonStyle? style) => style?.maximumSize);
     final Color? resolvedIconColor = effectiveIconColor();
@@ -439,9 +451,6 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
           effectiveValue((ButtonStyle? style) => style?.overlayColor?.resolve(states)),
     );
 
-    final VisualDensity? resolvedVisualDensity = effectiveValue(
-      (ButtonStyle? style) => style?.visualDensity,
-    );
     final MaterialTapTargetSize? resolvedTapTargetSize = effectiveValue(
       (ButtonStyle? style) => style?.tapTargetSize,
     );
@@ -453,7 +462,6 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
     final AlignmentGeometry? resolvedAlignment = effectiveValue(
       (ButtonStyle? style) => style?.alignment,
     );
-    final Offset densityAdjustment = resolvedVisualDensity!.baseSizeAdjustment;
     final InteractiveInkFeatureFactory? resolvedSplashFactory = effectiveValue(
       (ButtonStyle? style) => style?.splashFactory,
     );
@@ -470,13 +478,11 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
             ? Clip.antiAlias
             : Clip.none);
 
-    BoxConstraints effectiveConstraints = resolvedVisualDensity.effectiveConstraints(
-      BoxConstraints(
-        minWidth: resolvedMinimumSize!.width,
-        minHeight: resolvedMinimumSize.height,
-        maxWidth: resolvedMaximumSize!.width,
-        maxHeight: resolvedMaximumSize.height,
-      ),
+    BoxConstraints effectiveConstraints = BoxConstraints(
+      minWidth: resolvedMinimumSize!.width,
+      minHeight: resolvedMinimumSize.height,
+      maxWidth: resolvedMaximumSize!.width,
+      maxHeight: resolvedMaximumSize.height,
     );
     if (resolvedFixedSize != null) {
       final Size size = effectiveConstraints.constrain(resolvedFixedSize);
@@ -588,6 +594,8 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
       case MaterialTapTargetSize.shrinkWrap:
         minSize = Size.zero;
     }
+
+    print('>>>>>> effectiveConstraints = $effectiveConstraints');
 
     return Semantics(
       container: true,
