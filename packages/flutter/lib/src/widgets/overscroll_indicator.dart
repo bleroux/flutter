@@ -728,6 +728,7 @@ class _StretchingOverscrollIndicatorState extends State<StretchingOverscrollIndi
   bool _accepted = true;
 
   bool _handleScrollNotification(ScrollNotification notification) {
+    print('///-> _handleScrollNotification - $notification');
     if (!widget.notificationPredicate(notification)) {
       return false;
     }
@@ -964,11 +965,27 @@ class _StretchController extends ChangeNotifier {
     if (_state == _StretchState.recede || _state == _StretchState.idle) {
       return;
     }
+    print('>>> _ recede');
     _stretchSizeTween.begin = _stretchSize.value;
     _stretchSizeTween.end = 0.0;
     _stretchController.duration = duration;
     _stretchController.forward(from: 0.0);
     _state = _StretchState.recede;
+    // if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.persistentCallbacks) {
+    //   _stretchSizeTween.begin = _stretchSize.value;
+    //   _stretchSizeTween.end = 0.0;
+    //   _stretchController.duration = duration;
+    //   _stretchController.forward(from: 0.0);
+    //   _state = _StretchState.recede;
+    // } else {
+    //   SchedulerBinding.instance.addPostFrameCallback((Duration timestamp) {
+    //     _stretchSizeTween.begin = _stretchSize.value;
+    //     _stretchSizeTween.end = 0.0;
+    //     _stretchController.duration = duration;
+    //     _stretchController.forward(from: 0.0);
+    //     _state = _StretchState.recede;
+    //   });
+    // }
   }
 
   @override

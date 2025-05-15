@@ -1243,6 +1243,69 @@ void main() {
       expect(box3.localToGlobal(Offset.zero).dy, 350.0);
     },
   );
+
+  testWidgets('Stretching animation does not crash', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(400, 500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.reset);
+
+    final GlobalKey box1Key = GlobalKey();
+    final GlobalKey box2Key = GlobalKey();
+    final GlobalKey box3Key = GlobalKey();
+    late final OverscrollNotification overscrollNotification;
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      NotificationListener<OverscrollNotification>(
+        child: buildTest(
+          box1Key,
+          box2Key,
+          box3Key,
+          controller,
+          physics: const _HighFrictionClampingScrollPhysics(),
+        ),
+        onNotification: (OverscrollNotification notification) {
+          overscrollNotification = notification;
+          return false;
+        },
+      ),
+    );
+
+    // We fling to the trailing edge and let it settle.
+    await tester.fling(find.byType(CustomScrollView), const Offset(0.0, -50.0), 10000.0);
+    // await tester.pump();
+    // await tester.pump(Duration(milliseconds: 500));
+    //await tester.pumpAndSettle();
+
+    // int count = 0;
+    // do {
+    //   await tester.pump(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate);
+    //   count += 1;
+    //   print('--> count = $count');
+    // } while (tester.binding.hasScheduledFrame);
+
+    // for (var i = 0; i < 15; i++) {
+    //   print('--> pump n°$i');
+    //   await tester.pump(const Duration(milliseconds: 100));
+    // }
+
+    // Ok
+    // await tester.pump(const Duration(milliseconds: 100));
+    // await tester.pump(const Duration(milliseconds: 100));
+    // await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.pump(const Duration(milliseconds: 100));
+
+    print('/// ${tester.binding.schedulerPhase}');
+    tester.view.physicalSize = const Size(400, 600);
+
+    await tester.pump(const Duration(milliseconds: 100), EnginePhase.layout);
+
+    //await tester.pump(const Duration(milliseconds: 100));
+    // await tester.pump();
+    // await tester.pump();
+  });
 }
 
 final class _HighFrictionClampingScrollPhysics extends ScrollPhysics {

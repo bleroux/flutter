@@ -1115,6 +1115,8 @@ class _ScaffoldLayout extends MultiChildLayoutDelegate {
         bottomWidgetsHeight: bottomWidgetsHeight,
         appBarHeight: appBarHeight,
       );
+      // print('>>> _ScaffoldLayout - size = $size');
+      // print('>>> _ScaffoldLayout - bodyConstraints = $bodyConstraints');
       layoutChild(_ScaffoldSlot.body, bodyConstraints);
       positionChild(_ScaffoldSlot.body, Offset(0.0, contentTop));
     }
