@@ -18,6 +18,7 @@ import 'package:flutter/widgets.dart';
 import 'button_style.dart';
 import 'color_scheme.dart';
 import 'colors.dart';
+import 'constants.dart';
 import 'curves.dart';
 import 'debug.dart';
 import 'dialog.dart';
@@ -621,18 +622,6 @@ class _DayPeriodControl extends StatelessWidget {
             defaultTheme.dayPeriodShape)
         .copyWith(side: resolvedSide);
 
-    final Widget amButton = _AmPmButton(
-      selected: amSelected,
-      onPressed: () => _setAm(context),
-      label: materialLocalizations.anteMeridiemAbbreviation,
-    );
-
-    final Widget pmButton = _AmPmButton(
-      selected: pmSelected,
-      onPressed: () => _setPm(context),
-      label: materialLocalizations.postMeridiemAbbreviation,
-    );
-
     Size dayPeriodSize;
     final Orientation orientation;
     switch (_TimePickerModel.entryModeOf(context)) {
@@ -652,48 +641,114 @@ class _DayPeriodControl extends StatelessWidget {
     final Widget result;
     switch (orientation) {
       case Orientation.portrait:
+        bool showSeparator = true;
+        OutlinedBorder amShape = resolvedShape;
+        OutlinedBorder pmShape = resolvedShape;
+
+        if (resolvedShape is RoundedRectangleBorder && resolvedShape.borderRadius is BorderRadius) {
+          showSeparator = false;
+          final BorderRadius borderRadius = resolvedShape.borderRadius as BorderRadius;
+          amShape = resolvedShape.copyWith(
+            borderRadius: BorderRadius.only(
+              topLeft: borderRadius.topLeft,
+              topRight: borderRadius.topRight,
+            ),
+          );
+          pmShape = resolvedShape.copyWith(
+            borderRadius: BorderRadius.only(
+              bottomLeft: borderRadius.bottomLeft,
+              bottomRight: borderRadius.bottomRight,
+            ),
+          );
+        }
+
+        final Widget amButton = _AmPmButton(
+          selected: amSelected,
+          onPressed: () => _setAm(context),
+          label: materialLocalizations.anteMeridiemAbbreviation,
+          semanticAlignment: Alignment.bottomCenter,
+          shape: amShape,
+        );
+
+        final Widget pmButton = _AmPmButton(
+          selected: pmSelected,
+          onPressed: () => _setPm(context),
+          label: materialLocalizations.postMeridiemAbbreviation,
+          semanticAlignment: Alignment.topCenter,
+          shape: pmShape,
+        );
+
         result = _DayPeriodInputPadding(
           minSize: dayPeriodSize,
           orientation: orientation,
           child: SizedBox.fromSize(
             size: dayPeriodSize,
-            child: Material(
-              clipBehavior: Clip.antiAlias,
-              color: Colors.transparent,
-              shape: resolvedShape,
-              child: Column(
-                children: <Widget>[
-                  Expanded(child: amButton),
+            child: Column(
+              children: <Widget>[
+                Expanded(child: amButton),
+                if (showSeparator)
                   Container(
                     decoration: BoxDecoration(border: Border(top: resolvedSide)),
                     height: 1,
                   ),
-                  Expanded(child: pmButton),
-                ],
-              ),
+                Expanded(child: pmButton),
+              ],
             ),
           ),
         );
       case Orientation.landscape:
+        bool showSeparator = true;
+        OutlinedBorder amShape = resolvedShape;
+        OutlinedBorder pmShape = resolvedShape;
+
+        if (resolvedShape is RoundedRectangleBorder && resolvedShape.borderRadius is BorderRadius) {
+          showSeparator = false;
+          final BorderRadius borderRadius = resolvedShape.borderRadius as BorderRadius;
+          amShape = resolvedShape.copyWith(
+            borderRadius: BorderRadius.only(
+              topLeft: borderRadius.topLeft,
+              bottomLeft: borderRadius.bottomLeft,
+            ),
+          );
+          pmShape = resolvedShape.copyWith(
+            borderRadius: BorderRadius.only(
+              topRight: borderRadius.topRight,
+              bottomRight: borderRadius.bottomRight,
+            ),
+          );
+        }
+
+        final Widget amButton = _AmPmButton(
+          selected: amSelected,
+          onPressed: () => _setAm(context),
+          label: materialLocalizations.anteMeridiemAbbreviation,
+          semanticAlignment: Alignment.center,
+          shape: amShape,
+        );
+
+        final Widget pmButton = _AmPmButton(
+          selected: pmSelected,
+          onPressed: () => _setPm(context),
+          label: materialLocalizations.postMeridiemAbbreviation,
+          semanticAlignment: Alignment.center,
+          shape: pmShape,
+        );
+
         result = _DayPeriodInputPadding(
           minSize: dayPeriodSize,
           orientation: orientation,
           child: SizedBox(
             height: dayPeriodSize.height,
-            child: Material(
-              clipBehavior: Clip.antiAlias,
-              color: Colors.transparent,
-              shape: resolvedShape,
-              child: Row(
-                children: <Widget>[
-                  Expanded(child: amButton),
+            child: Row(
+              children: <Widget>[
+                Expanded(child: amButton),
+                if (showSeparator)
                   Container(
                     decoration: BoxDecoration(border: Border(left: resolvedSide)),
                     width: 1,
                   ),
-                  Expanded(child: pmButton),
-                ],
-              ),
+                Expanded(child: pmButton),
+              ],
             ),
           ),
         );
@@ -703,11 +758,19 @@ class _DayPeriodControl extends StatelessWidget {
 }
 
 class _AmPmButton extends StatelessWidget {
-  const _AmPmButton({required this.onPressed, required this.selected, required this.label});
+  const _AmPmButton({
+    required this.onPressed,
+    required this.selected,
+    required this.label,
+    required this.semanticAlignment,
+    required this.shape,
+  });
 
   final bool selected;
   final VoidCallback onPressed;
   final String label;
+  final Alignment semanticAlignment;
+  final OutlinedBorder shape;
 
   @override
   Widget build(BuildContext context) {
@@ -728,17 +791,100 @@ class _AmPmButton extends StatelessWidget {
     )?.copyWith(color: resolvedTextColor);
     final TextScaler buttonTextScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 2.0);
 
-    return Material(
-      color: resolvedBackgroundColor,
-      child: InkWell(
-        onTap: onPressed,
-        child: Semantics(
-          checked: selected,
-          inMutuallyExclusiveGroup: true,
-          button: true,
+    return _AmPmSemantics(
+      minSemanticHeight: kMinInteractiveDimension,
+      checked: selected,
+      alignment: semanticAlignment,
+      child: Material(
+        clipBehavior: Clip.antiAlias,
+        color: resolvedBackgroundColor,
+        shape: shape,
+        child: InkWell(
+          onTap: onPressed,
           child: Center(child: Text(label, style: resolvedTextStyle, textScaler: buttonTextScaler)),
         ),
       ),
+    );
+  }
+}
+
+class _AmPmSemantics extends SingleChildRenderObjectWidget {
+  const _AmPmSemantics({
+    super.child,
+    required this.minSemanticHeight,
+    required this.alignment,
+    required this.checked,
+  });
+
+  final double minSemanticHeight;
+  final Alignment alignment;
+  final bool checked;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderAmPmSemantics(minSemanticHeight, alignment, checked);
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, covariant _RenderAmPmSemantics renderObject) {
+    renderObject.minSemanticHeight = minSemanticHeight;
+    renderObject.alignment = alignment;
+    renderObject.checked = checked;
+  }
+}
+
+class _RenderAmPmSemantics extends RenderProxyBox {
+  _RenderAmPmSemantics(this._minSemanticHeight, this._alignment, this._checked, [RenderBox? child])
+    : super(child);
+
+  double get minSemanticHeight => _minSemanticHeight;
+  double _minSemanticHeight;
+  set minSemanticHeight(double value) {
+    if (_minSemanticHeight == value) {
+      return;
+    }
+    _minSemanticHeight = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  Alignment get alignment => _alignment;
+  Alignment _alignment;
+  set alignment(Alignment value) {
+    if (_alignment == value) {
+      return;
+    }
+    _alignment = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  bool get checked => _checked;
+  bool _checked;
+  set checked(bool value) {
+    if (_checked == value) {
+      return;
+    }
+    _checked = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    config.isChecked = checked;
+    config.isInMutuallyExclusiveGroup = true;
+    config.isButton = true;
+  }
+
+  @override
+  Rect get semanticBounds {
+    if (size.height > minSemanticHeight) {
+      return super.semanticBounds;
+    }
+    final double translateY = (minSemanticHeight - size.height) / 2.0 * -alignment.y;
+    return Rect.fromCenter(
+      center: paintBounds.center + Offset(0, translateY),
+      width: size.width,
+      height: minSemanticHeight,
     );
   }
 }

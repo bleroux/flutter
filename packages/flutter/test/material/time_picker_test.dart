@@ -1647,6 +1647,46 @@ void main() {
         expect(minuteSize.width, greaterThanOrEqualTo(48));
         expect(minuteSize.height, greaterThanOrEqualTo(48));
       });
+
+      testWidgets(
+        'Period selector touch target respects accessibility guidelines - Portrait mode',
+        (WidgetTester tester) async {
+          final SemanticsTester semantics = SemanticsTester(tester);
+          const Size minInteractiveSize = Size(kMinInteractiveDimension, kMinInteractiveDimension);
+
+          // Ensure picker is displayed in portrait mode.
+          tester.view.physicalSize = const Size(600, 1000);
+          addTearDown(tester.view.reset);
+
+          await mediaQueryBoilerplate(tester, materialType: materialType);
+
+          final SemanticsNode amButton = semantics.nodesWith(label: amString).single;
+          expect(amButton.rect.size >= minInteractiveSize, isTrue);
+
+          final SemanticsNode pmButton = semantics.nodesWith(label: pmString).single;
+          expect(pmButton.rect.size >= minInteractiveSize, isTrue);
+
+          semantics.dispose();
+        },
+      );
+
+      testWidgets(
+        'Period selector touch target respects accessibility guidelines - Landscape mode',
+        (WidgetTester tester) async {
+          final SemanticsTester semantics = SemanticsTester(tester);
+          const Size minInteractiveSize = Size(kMinInteractiveDimension, kMinInteractiveDimension);
+
+          await mediaQueryBoilerplate(tester, materialType: materialType);
+
+          final SemanticsNode amButton = semantics.nodesWith(label: amString).single;
+          expect(amButton.rect.size >= minInteractiveSize, isTrue);
+
+          final SemanticsNode pmButton = semantics.nodesWith(label: pmString).single;
+          expect(pmButton.rect.size >= minInteractiveSize, isTrue);
+
+          semantics.dispose();
+        },
+      );
     });
 
     group('Time picker - Input (${materialType.name})', () {
