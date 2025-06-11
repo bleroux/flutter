@@ -583,17 +583,32 @@ class _MinuteControl extends StatelessWidget {
 
 /// Displays the am/pm fragment and provides controls for switching between am
 /// and pm.
-class _DayPeriodControl extends StatelessWidget {
+class _DayPeriodControl extends StatefulWidget {
   const _DayPeriodControl({this.onPeriodChanged});
 
   final ValueChanged<TimeOfDay>? onPeriodChanged;
+
+  @override
+  State<_DayPeriodControl> createState() => _DayPeriodControlState();
+}
+
+class _DayPeriodControlState extends State<_DayPeriodControl> {
+  final FocusNode amFocusNode = FocusNode(debugLabel: 'AM Button');
+  final FocusNode pmFocusNode = FocusNode(debugLabel: 'PM Button');
+
+  @override
+  void dispose() {
+    amFocusNode.dispose();
+    pmFocusNode.dispose();
+    super.dispose();
+  }
 
   void _togglePeriod(BuildContext context) {
     final TimeOfDay selectedTime = _TimePickerModel.selectedTimeOf(context);
     final int newHour = (selectedTime.hour + TimeOfDay.hoursPerPeriod) % TimeOfDay.hoursPerDay;
     final TimeOfDay newTime = selectedTime.replacing(hour: newHour);
-    if (onPeriodChanged != null) {
-      onPeriodChanged!(newTime);
+    if (widget.onPeriodChanged != null) {
+      widget.onPeriodChanged!(newTime);
     } else {
       _TimePickerModel.setSelectedTime(context, newTime);
     }
@@ -633,12 +648,14 @@ class _DayPeriodControl extends StatelessWidget {
       selected: amSelected,
       onPressed: () => _setAm(context),
       label: materialLocalizations.anteMeridiemAbbreviation,
+      focusNode: amFocusNode,
     );
 
     final _AmPmButton pmButton = _AmPmButton(
       selected: pmSelected,
       onPressed: () => _setPm(context),
       label: materialLocalizations.postMeridiemAbbreviation,
+      focusNode: pmFocusNode,
     );
 
     Size dayPeriodSize;
@@ -699,6 +716,9 @@ class _DayPeriodControl extends StatelessWidget {
                         inMutuallyExclusiveGroup: true,
                         button: true,
                         label: amButton.label,
+                        onTap: () => _setAm(context),
+                        focusable: true,
+                        focused: amFocusNode.hasPrimaryFocus,
                         child: SizedBox(
                           width: dayPeriodSize.width,
                           height: minInteractiveSize.height / 2,
@@ -711,6 +731,9 @@ class _DayPeriodControl extends StatelessWidget {
                         inMutuallyExclusiveGroup: true,
                         button: true,
                         label: pmButton.label,
+                        onTap: () => _setPm(context),
+                        focusable: true,
+                        focused: amFocusNode.hasPrimaryFocus,
                         child: SizedBox(
                           width: dayPeriodSize.width,
                           height: minInteractiveSize.height / 2,
@@ -725,25 +748,69 @@ class _DayPeriodControl extends StatelessWidget {
         );
       case Orientation.landscape:
         result = _DayPeriodInputPadding(
-          minSize: dayPeriodSize,
+          minSize: Size(
+            dayPeriodSize.width,
+            math.max(dayPeriodSize.height, kMinInteractiveDimension),
+          ),
           orientation: orientation,
-          child: SizedBox(
-            height: dayPeriodSize.height,
-            child: Material(
-              clipBehavior: Clip.antiAlias,
-              color: Colors.transparent,
-              shape: resolvedShape,
-              child: Row(
-                children: <Widget>[
-                  Expanded(child: amButton),
-                  Container(
-                    decoration: BoxDecoration(border: Border(left: resolvedSide)),
-                    width: 1,
+          child: Stack(
+            children: <Widget>[
+              SizedBox(
+                height: dayPeriodSize.height,
+                child: Material(
+                  clipBehavior: Clip.antiAlias,
+                  color: Colors.transparent,
+                  shape: resolvedShape,
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(child: amButton),
+                      Container(
+                        decoration: BoxDecoration(border: Border(left: resolvedSide)),
+                        width: 1,
+                      ),
+                      Expanded(child: pmButton),
+                    ],
                   ),
-                  Expanded(child: pmButton),
-                ],
+                ),
               ),
-            ),
+              SizedBox.fromSize(
+                size: minInteractiveSize,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Semantics(
+                        checked: amSelected,
+                        inMutuallyExclusiveGroup: true,
+                        button: true,
+                        label: amButton.label,
+                        onTap: () => _setAm(context),
+                        focusable: true,
+                        focused: amFocusNode.hasPrimaryFocus,
+                        child: SizedBox(
+                          width: dayPeriodSize.width / 2,
+                          height: math.max(dayPeriodSize.height, kMinInteractiveDimension),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Semantics(
+                        checked: pmSelected,
+                        inMutuallyExclusiveGroup: true,
+                        button: true,
+                        label: pmButton.label,
+                        onTap: () => _setPm(context),
+                        focusable: true,
+                        focused: amFocusNode.hasPrimaryFocus,
+                        child: SizedBox(
+                          width: dayPeriodSize.width / 2,
+                          height: math.max(dayPeriodSize.height, kMinInteractiveDimension),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
     }
@@ -752,11 +819,17 @@ class _DayPeriodControl extends StatelessWidget {
 }
 
 class _AmPmButton extends StatelessWidget {
-  const _AmPmButton({required this.onPressed, required this.selected, required this.label});
+  const _AmPmButton({
+    required this.onPressed,
+    required this.selected,
+    required this.label,
+    required this.focusNode,
+  });
 
   final bool selected;
   final VoidCallback onPressed;
   final String label;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -777,11 +850,15 @@ class _AmPmButton extends StatelessWidget {
     )?.copyWith(color: resolvedTextColor);
     final TextScaler buttonTextScaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 2.0);
 
-    return Material(
-      color: resolvedBackgroundColor,
-      child: InkWell(
-        onTap: onPressed,
-        child: Center(child: Text(label, style: resolvedTextStyle, textScaler: buttonTextScaler)),
+    return ExcludeSemantics(
+      child: Material(
+        color: resolvedBackgroundColor,
+        child: InkWell(
+          focusNode: focusNode,
+          excludeFromSemantics: true,
+          onTap: onPressed,
+          child: Center(child: Text(label, style: resolvedTextStyle, textScaler: buttonTextScaler)),
+        ),
       ),
     );
   }

@@ -1389,6 +1389,9 @@ void main() {
         final SemanticsTester semantics = SemanticsTester(tester);
         await mediaQueryBoilerplate(tester, materialType: materialType);
 
+        //debugDumpSemanticsTree(DebugSemanticsDumpOrder.inverseHitTest);
+        debugDumpSemanticsTree();
+
         expect(
           semantics,
           includesNodeWith(
