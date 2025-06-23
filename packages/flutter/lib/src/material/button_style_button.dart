@@ -501,7 +501,7 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
     final double dy = densityAdjustment.dy;
     final double dx = math.max(0, densityAdjustment.dx);
     final EdgeInsetsGeometry padding = resolvedPadding!
-        .add(EdgeInsets.fromLTRB(dx, dy, dx, dy))
+        .add(EdgeInsets.fromLTRB(dx, dy / 2, dx, dy / 2))
         .clamp(EdgeInsets.zero, EdgeInsetsGeometry.infinity);
 
     // If an opaque button's background is becoming translucent while its

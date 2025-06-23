@@ -921,7 +921,7 @@ void main() {
 
     await buildTest(const VisualDensity(horizontal: 3.0, vertical: 3.0));
     await tester.pumpAndSettle();
-    expect(box.size, equals(material3 ? const Size(64, 64) : const Size(60, 60)));
+    expect(box.size, equals(material3 ? const Size(64, 60) : const Size(60, 60)));
 
     await buildTest(const VisualDensity(horizontal: -3.0, vertical: -3.0));
     await tester.pumpAndSettle();
@@ -2583,7 +2583,7 @@ void main() {
       iconButtonThemeVisualDensity: const VisualDensity(horizontal: 3.0, vertical: 3.0),
     );
     await tester.pumpAndSettle();
-    expect(box.size, equals(const Size(64, 64)));
+    expect(box.size, equals(const Size(64, 60)));
 
     // ThemeData.visualDensity will be ignored because useMaterial3 is true
     await buildTest(themeVisualDensity: VisualDensity.standard);
