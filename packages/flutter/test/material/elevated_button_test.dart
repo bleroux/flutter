@@ -2608,4 +2608,58 @@ void main() {
     expect(textColor(tester, buttonText), hoveredColor);
     expect(iconStyle(tester, buttonIcon).color, hoveredColor);
   });
+
+  testWidgets('When an ElevatedButton gains an icon, preserves the same SemanticsNode id', (
+    WidgetTester tester,
+  ) async {
+    bool toggled = false;
+
+    const Key key = Key('button');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Row(
+                children: <Widget>[
+                  ElevatedButton.icon(
+                    key: key,
+                    onPressed: () {
+                      setState(() {
+                        toggled = true;
+                      });
+                    },
+                    icon: toggled ? const Icon(Icons.favorite) : null,
+                    label: const Text('Button'),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    // Initially, no icons are present.
+    expect(find.byIcon(Icons.favorite), findsNothing);
+
+    // Find the original ElevatedButton with no icon and get its SemanticsNode.
+    final Finder outlinedButton = find.bySemanticsLabel('Button');
+    expect(outlinedButton, findsOneWidget);
+
+    final SemanticsNode origSemanticsNode = tester.getSemantics(outlinedButton);
+
+    // Tap the button. It should receive an icon now.
+    await tester.tap(outlinedButton);
+    await tester.pump();
+
+    // Now one icon should be present.
+    expect(find.byIcon(Icons.favorite), findsOneWidget);
+
+    // Check if the semantics has change.
+    final SemanticsNode semanticsNodeWithIcon = tester.getSemantics(outlinedButton);
+
+    expect(semanticsNodeWithIcon, origSemanticsNode);
+  });
 }
