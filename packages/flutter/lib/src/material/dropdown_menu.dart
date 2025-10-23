@@ -661,6 +661,7 @@ class _DropdownMenuState<T extends Object> extends State<DropdownMenu<T>> {
   final FocusNode _internalFocudeNode = FocusNode();
   int? _selectedEntryIndex;
   late final void Function() _clearSelectedEntryIndex;
+  WidgetStatesController? highlightedItemStatesController;
 
   FocusNode? _localTrailingIconButtonFocusNode;
   FocusNode get _trailingIconButtonFocusNode =>
@@ -697,6 +698,7 @@ class _DropdownMenuState<T extends Object> extends State<DropdownMenu<T>> {
     _internalFocudeNode.dispose();
     _localTrailingIconButtonFocusNode?.dispose();
     _localTrailingIconButtonFocusNode = null;
+    highlightedItemStatesController?.dispose();
     super.dispose();
   }
 
@@ -882,10 +884,14 @@ class _DropdownMenuState<T extends Object> extends State<DropdownMenu<T>> {
       final WidgetStateProperty<Color?>? effectiveBackgroundColor =
           entry.style?.backgroundColor ?? themeStyle?.backgroundColor;
 
+      final bool entryIsSelected = entry.enabled && i == focusedIndex;
       // Simulate the focused state because the text field should always be focused
       // during traversal. Include potential MenuItemButton theme in the focus
       // simulation for all colors in the theme.
-      if (entry.enabled && i == focusedIndex) {
+      if (entryIsSelected) {
+        highlightedItemStatesController?.dispose();
+        highlightedItemStatesController = MaterialStatesController({WidgetState.focused});
+        print('))) $highlightedItemStatesController');
         // Query the Material 3 default style.
         // TODO(bleroux): replace once a standard way for accessing defaults will be defined.
         // See: https://github.com/flutter/flutter/issues/130135.
@@ -935,49 +941,52 @@ class _DropdownMenuState<T extends Object> extends State<DropdownMenu<T>> {
         );
       }
 
-      final Widget menuItemButton = ExcludeSemantics(
-        excluding: excludeSemantics,
-        child: MenuItemButton(
-          key: enableScrollToHighlight ? buttonItemKeys[i] : null,
-          style: effectiveStyle,
-          leadingIcon: entry.leadingIcon,
-          trailingIcon: entry.trailingIcon,
-          closeOnActivate: widget.closeBehavior == DropdownMenuCloseBehavior.all,
-          onPressed: entry.enabled && widget.enabled
-              ? () {
-                  if (!mounted) {
-                    // In some cases (e.g., nested menus), calling onSelected from MenuAnchor inside a postFrameCallback
-                    // can result in the MenuItemButton's onPressed callback being triggered after the state has been disposed.
-                    // TODO(ahmedrasar): MenuAnchor should avoid calling onSelected inside a postFrameCallback.
-                    widget.controller?.value = TextEditingValue(
+      final Widget menuItemButton = ExcludeFocus(
+        child: ExcludeSemantics(
+          excluding: excludeSemantics,
+          child: MenuItemButton(
+            key: enableScrollToHighlight ? buttonItemKeys[i] : null,
+            statesController: entryIsSelected ? highlightedItemStatesController : null,
+            style: effectiveStyle,
+            leadingIcon: entry.leadingIcon,
+            trailingIcon: entry.trailingIcon,
+            closeOnActivate: widget.closeBehavior == DropdownMenuCloseBehavior.all,
+            onPressed: entry.enabled && widget.enabled
+                ? () {
+                    if (!mounted) {
+                      // In some cases (e.g., nested menus), calling onSelected from MenuAnchor inside a postFrameCallback
+                      // can result in the MenuItemButton's onPressed callback being triggered after the state has been disposed.
+                      // TODO(ahmedrasar): MenuAnchor should avoid calling onSelected inside a postFrameCallback.
+                      widget.controller?.value = TextEditingValue(
+                        text: entry.label,
+                        selection: TextSelection.collapsed(offset: entry.label.length),
+                      );
+                      widget.onSelected?.call(entry.value);
+                      return;
+                    }
+                    _effectiveTextEditingController.value = TextEditingValue(
                       text: entry.label,
                       selection: TextSelection.collapsed(offset: entry.label.length),
                     );
+                    _selectedEntryIndex = i;
+                    currentHighlight = widget.enableSearch ? i : null;
                     widget.onSelected?.call(entry.value);
-                    return;
+                    _enableFilter = false;
+                    if (widget.closeBehavior == DropdownMenuCloseBehavior.self) {
+                      _controller.close();
+                    }
                   }
-                  _effectiveTextEditingController.value = TextEditingValue(
-                    text: entry.label,
-                    selection: TextSelection.collapsed(offset: entry.label.length),
-                  );
-                  _selectedEntryIndex = i;
-                  currentHighlight = widget.enableSearch ? i : null;
-                  widget.onSelected?.call(entry.value);
-                  _enableFilter = false;
-                  if (widget.closeBehavior == DropdownMenuCloseBehavior.self) {
-                    _controller.close();
-                  }
-                }
-              : null,
-          requestFocusOnHover: false,
-          // MenuItemButton implementation is based on M3 spec for menu which specifies a
-          // horizontal padding of 12 pixels.
-          // In the context of DropdownMenu the M3 spec specifies that the menu item and the text
-          // field content should be aligned. The text field has a horizontal padding of 16 pixels.
-          // To conform with the 16 pixels padding, a 4 pixels padding is added in front of the item label.
-          child: Padding(
-            padding: EdgeInsetsDirectional.only(start: effectiveInputStartGap),
-            child: label,
+                : null,
+            requestFocusOnHover: false,
+            // MenuItemButton implementation is based on M3 spec for menu which specifies a
+            // horizontal padding of 12 pixels.
+            // In the context of DropdownMenu the M3 spec specifies that the menu item and the text
+            // field content should be aligned. The text field has a horizontal padding of 16 pixels.
+            // To conform with the 16 pixels padding, a 4 pixels padding is added in front of the item label.
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(start: effectiveInputStartGap),
+              child: label,
+            ),
           ),
         ),
       );

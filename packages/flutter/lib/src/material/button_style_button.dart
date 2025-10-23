@@ -333,6 +333,7 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
     if (widget.statesController == null) {
       internalStatesController = MaterialStatesController();
     }
+    print('-----> states - ${statesController.value}');
     statesController.update(WidgetState.disabled, !widget.enabled);
     statesController.addListener(handleStatesControllerChange);
   }
@@ -406,6 +407,7 @@ class _ButtonStyleState extends State<ButtonStyleButton> with TickerProviderStat
     final TextStyle? resolvedTextStyle = resolve<TextStyle?>(
       (ButtonStyle? style) => style?.textStyle,
     );
+    print('>>>> resolvedTextStyle = $resolvedTextStyle');
     Color? resolvedBackgroundColor = resolve<Color?>(
       (ButtonStyle? style) => style?.backgroundColor,
     );

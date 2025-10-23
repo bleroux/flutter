@@ -1132,6 +1132,7 @@ class WidgetStatesController extends ValueNotifier<Set<WidgetState>> {
   /// Adds [state] to [value] if [add] is true, and removes it otherwise,
   /// and notifies listeners if [value] has changed.
   void update(WidgetState state, bool add) {
+    print('>>>> update - ${add ? 'Add' : 'Remove'} - state = $state');
     final bool valueChanged = add ? value.add(state) : value.remove(state);
     if (valueChanged) {
       notifyListeners();
