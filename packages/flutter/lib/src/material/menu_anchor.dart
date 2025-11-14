@@ -162,6 +162,11 @@ class MenuAnchor extends StatefulWidget {
     this.style,
     this.alignmentOffset = Offset.zero,
     this.reservedPadding,
+    @Deprecated(
+      'Obsolete as MenuAnchor relies on OverlayPortal.overlayChildLayoutBuilder '
+      'to attach the menu to the widget it surrounds. '
+      'This feature was deprecated after v3.16.0-8.0.pre.',
+    )
     this.layerLink,
     this.clipBehavior = Clip.hardEdge,
     @Deprecated(
@@ -230,6 +235,11 @@ class MenuAnchor extends StatefulWidget {
   ///
   /// When provided, the menu will follow the widget that this [MenuAnchor]
   /// surrounds if it moves because of view insets changes.
+  @Deprecated(
+    'Obsolete as MenuAnchor relies on OverlayPortal.overlayChildLayoutBuilder '
+    'to attach the menu to the widget it surrounds. '
+    'This feature was deprecated after v3.16.0-8.0.pre.',
+  )
   final LayerLink? layerLink;
 
   /// {@macro flutter.material.Material.clipBehavior}
@@ -382,7 +392,7 @@ class _MenuAnchorState extends State<MenuAnchor> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget child = _MenuAnchorScope(
+    return _MenuAnchorScope(
       state: this,
       child: RawMenuAnchor(
         useRootOverlay: widget.useRootOverlay,
@@ -396,17 +406,10 @@ class _MenuAnchorState extends State<MenuAnchor> {
         child: widget.child,
       ),
     );
-
-    if (widget.layerLink == null) {
-      return child;
-    }
-
-    return CompositedTransformTarget(link: widget.layerLink!, child: child);
   }
 
   Widget _buildOverlay(BuildContext context, RawMenuOverlayInfo position) {
     return _Submenu(
-      layerLink: widget.layerLink,
       consumeOutsideTaps: widget.consumeOutsideTap,
       menuScopeNode: _menuScopeNode,
       menuStyle: widget.style,
@@ -3294,7 +3297,6 @@ class _MenuPanelState extends State<_MenuPanel> {
 class _Submenu extends StatelessWidget {
   const _Submenu({
     required this.anchor,
-    required this.layerLink,
     required this.menuStyle,
     required this.menuPosition,
     required this.alignmentOffset,
@@ -3309,7 +3311,6 @@ class _Submenu extends StatelessWidget {
   final FocusScopeNode menuScopeNode;
   final RawMenuOverlayInfo menuPosition;
   final _MenuAnchorState anchor;
-  final LayerLink? layerLink;
   final MenuStyle? menuStyle;
   final bool consumeOutsideTaps;
   final Offset alignmentOffset;
@@ -3357,14 +3358,12 @@ class _Submenu extends StatelessWidget {
         .add(EdgeInsets.fromLTRB(dx, 0, dx, 0))
         .clamp(EdgeInsets.zero, EdgeInsetsGeometry.infinity);
 
-    final Rect anchorRect = layerLink == null
-        ? Rect.fromLTRB(
-            menuPosition.anchorRect.left + dx,
-            menuPosition.anchorRect.top,
-            menuPosition.anchorRect.right,
-            menuPosition.anchorRect.bottom,
-          )
-        : Rect.zero;
+    final Rect anchorRect = Rect.fromLTRB(
+      menuPosition.anchorRect.left + dx,
+      menuPosition.anchorRect.top,
+      menuPosition.anchorRect.right,
+      menuPosition.anchorRect.bottom,
+    );
 
     final Widget menuPanel = TapRegion(
       groupId: menuPosition.tapRegionGroupId,
@@ -3397,7 +3396,7 @@ class _Submenu extends StatelessWidget {
       ),
     );
 
-    final Widget layout = Theme(
+    return Theme(
       data: Theme.of(context).copyWith(visualDensity: visualDensity),
       child: ConstrainedBox(
         constraints: BoxConstraints.loose(menuPosition.overlaySize),
@@ -3422,16 +3421,6 @@ class _Submenu extends StatelessWidget {
           },
         ),
       ),
-    );
-
-    if (layerLink == null) {
-      return layout;
-    }
-
-    return CompositedTransformFollower(
-      link: layerLink!,
-      targetAnchor: Alignment.bottomLeft,
-      child: layout,
     );
   }
 }
